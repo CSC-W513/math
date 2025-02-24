@@ -1,3 +1,6 @@
+// 在文件開頭添加全局變量來追踪所有已使用的分數組合
+let usedFractionCombinations = new Set();
+
 document.querySelectorAll('button').forEach(button => {
     button.addEventListener('click', function() {
         // 根據按鈕的ID生成題目
@@ -6,6 +9,8 @@ document.querySelectorAll('button').forEach(button => {
 });
 
 function generateQuestions(selectedType) {
+    // 在生成新題目時重置已使用的組合
+    usedFractionCombinations = new Set();
     let questions = [];
 
     for (let i = 0; i < 30; i++) {
@@ -1127,6 +1132,109 @@ function generateQuestions(selectedType) {
                     }
                 } while (true);
                 break;
+            case 'fractionRatio': // 分數占比
+                let total, numerator, denominator;
+                do {
+                    // 生成更大範圍的總數 (50-500)
+                    total = Math.floor(Math.random() * 451) + 50;
+                    // 生成更大的分母 (2-20)
+                    denominator = Math.floor(Math.random() * 19) + 2;
+                    // 生成分子 (1到分母-1)
+                    numerator = Math.floor(Math.random() * (denominator - 1)) + 1;
+                    
+                    // 隨機決定是否使用複合分數情境
+                    const useCompound = Math.random() < 0.3; // 30%機率使用複合分數
+                    
+                    // 確保結果是整數
+                    if ((total * numerator) % denominator === 0) {
+                        // 生成更多樣化的隨機情境題
+                        const scenarios = [
+                            // 基礎題型
+                            `學校有 ${total} 位學生，其中 ${formatFraction(numerator, denominator)} 參加了社團，參加社團的學生有幾位？`,
+                            `工廠生產了 ${total} 個零件，其中 ${formatFraction(numerator, denominator)} 是不合格品，不合格品有幾個？`,
+                            
+                            // 金錢計算題型
+                            `某公司年度預算 ${total} 萬元，其中 ${formatFraction(numerator, denominator)} 用於研發，研發經費是多少萬元？`,
+                            `超市進貨 ${total} 元的商品，打算賺取成本的 ${formatFraction(numerator, denominator)}，應該賺多少元？`,
+                            
+                            // 時間分配題型
+                            `小明每天讀書 ${total} 分鐘，其中 ${formatFraction(numerator, denominator)} 的時間用來讀數學，數學讀了幾分鐘？`,
+                            
+                            // 複合計算題型
+                            `一個農場有 ${total} 公頃，目前種植作物的面積占 ${formatFraction(numerator, denominator)}，${
+                                useCompound ? 
+                                `如果每公頃收成 ${Math.floor(Math.random() * 5) + 3} 噸，總共可以收成幾噸？` : 
+                                `種植作物的面積是幾公頃？`
+                            }`,
+                            
+                            // 比較題型
+                            `一個籃球隊 ${total} 次投籃，其中 ${formatFraction(numerator, denominator)} 投中，${
+                                useCompound ? 
+                                `如果要提高命中率到 ${formatFraction(numerator + 1, denominator)}，還需要多投中幾球？` :
+                                `投中了幾球？`
+                            }`,
+                            
+                            // 成長題型
+                            `去年工廠產量是 ${total} 件，今年計劃增加 ${formatFraction(numerator, denominator)}，${
+                                useCompound ? 
+                                `如果均勻分配到12個月，每月需要增加多少件？` :
+                                `需要增加多少件？`
+                            }`
+                        ];
+                        
+                        const selectedScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+                        let answer = (total * numerator) / denominator;
+                        
+                        // 根據不同題型計算最終答案
+                        if (selectedScenario.includes('每月需要增加')) {
+                            answer = Math.round(answer / 12); // 除以12個月
+                        } else if (selectedScenario.includes('還需要多投中幾球')) {
+                            const currentHits = answer;
+                            const targetHits = (total * (numerator + 1)) / denominator;
+                            answer = targetHits - currentHits;
+                        } else if (selectedScenario.includes('每公頃收成')) {
+                            const acres = answer;
+                            const yieldPerAcre = parseInt(selectedScenario.match(/每公頃收成 (\d+) 噸/)[1]);
+                            answer = acres * yieldPerAcre;
+                        }
+                        
+                        questions.push({ 
+                            question: `${i + 1}. ${selectedScenario}`, 
+                            answer: answer
+                        });
+                        break;
+                    }
+                } while (true);
+                break;
+            case 'setTheoryFractions': // 集合應用的分數題型
+                do {
+                    // 生成兩個集合的基本分數，確保它們的和大於既不屬於的部分
+                    const fractions = generateSetFractions();
+                    const set1Name = ['近視', '戴眼鏡', '愛運動', '參加社團', '喜歡數學'][Math.floor(Math.random() * 5)];
+                    const set2Name = ['砂眼', '課後補習', '會樂器', '住校', '喜歡國文'][Math.floor(Math.random() * 5)];
+                    
+                    if (fractions) {
+                        // 生成隨機情境題
+                        const scenarios = [
+                            `某班級中，有${set1Name}的占${formatFraction(fractions.A.n, fractions.A.d)}，` +
+                            `有${set2Name}的占${formatFraction(fractions.B.n, fractions.B.d)}，` +
+                            `既不${set1Name}也沒有${set2Name}的占${formatFraction(fractions.neither.n, fractions.neither.d)}，` +
+                            `請問：\n` +
+                            `(1) 有${set1Name}又有${set2Name}的占全班的幾分之幾？\n` +
+                            `(2) 只有${set1Name}沒有${set2Name}的占全班的幾分之幾？`
+                        ];
+
+                        const selectedScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+                        
+                        questions.push({ 
+                            question: `${i + 1}. ${selectedScenario}`, 
+                            answer: `(1) ${formatFraction(fractions.intersection.n, fractions.intersection.d)}\n` +
+                                    `(2) ${formatFraction(fractions.onlyA.n, fractions.onlyA.d)}`
+                        });
+                        break;
+                    }
+                } while (true);
+                break;
         }
     }
     displayQuestions(questions);
@@ -1331,4 +1439,181 @@ function formatPrimeFactors(factors) {
     });
     
     return result.join(' × ');
+}
+
+// 在文件末尾添加以下輔助函數：
+
+function generateCompatibleFractions() {
+    // 生成兩個合適的分數，確保它們的和不超過1
+    let attempts = 0;
+    while (attempts < 100) {
+        const d1 = Math.floor(Math.random() * 4) + 2; // 2-5的分母
+        const d2 = Math.floor(Math.random() * 4) + 2; // 2-5的分母
+        const n1 = Math.floor(Math.random() * (d1 - 1)) + 1; // 分子小於分母
+        const n2 = Math.floor(Math.random() * (d2 - 1)) + 1; // 分子小於分母
+
+        const value1 = n1 / d1;
+        const value2 = n2 / d2;
+
+        if (value1 + value2 < 1) {
+            return {
+                frac1: { n: n1, d: d1, value: value1 },
+                frac2: { n: n2, d: d2, value: value2 }
+            };
+        }
+        attempts++;
+    }
+    // 如果找不到合適的分數，返回預設值
+    return {
+        frac1: { n: 1, d: 3, value: 1/3 },
+        frac2: { n: 1, d: 4, value: 1/4 }
+    };
+}
+
+function generateCompatibleThirdFraction(frac1, frac2) {
+    // 計算可能的第三個分數
+    const total = 1;
+    const usedSum = frac1.value + frac2.value;
+    const remainingSpace = total - usedSum;
+
+    // 尋找適合的分母（2-6）
+    for (let d = 2; d <= 6; d++) {
+        for (let n = 1; n < d; n++) {
+            const value = n / d;
+            if (Math.abs(value - remainingSpace) < 0.0001) { // 使用小數點比較
+                return { n, d, value };
+            }
+        }
+    }
+    return null;
+}
+
+function formatFractionValue(value) {
+    // 將小數轉換為最簡分數
+    const tolerance = 1.0e-6;
+    let h1 = 1;
+    let h2 = 0;
+    let k1 = 0;
+    let k2 = 1;
+    let b = value;
+    do {
+        let a = Math.floor(b);
+        let aux = h1;
+        h1 = a * h1 + h2;
+        h2 = aux;
+        aux = k1;
+        k1 = a * k1 + k2;
+        k2 = aux;
+        b = 1 / (b - a);
+    } while (Math.abs(value - h1 / k1) > value * tolerance);
+
+    return formatFraction(h1, k1);
+}
+
+// 修改輔助函數：
+function generateSetFractions() {
+    let attempts = 0;
+    
+    while (attempts < 300) {
+        // 生成分母範圍
+        const denominators = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+        
+        // 隨機選擇分母
+        const shuffledDenominators = [...denominators].sort(() => Math.random() - 0.5);
+        const commonDenominator = shuffledDenominators[0]; // 使用共同分母
+        
+        // 生成各部分的分子（確保總和為分母）
+        const maxNumerator = commonDenominator - 1;
+        
+        // 先生成交集部分（A∩B）
+        const intersectionN = Math.floor(Math.random() * (maxNumerator / 4)) + 1;
+        
+        // 生成只屬於A的部分（A-B）
+        const remainingAfterIntersection = maxNumerator - intersectionN;
+        const onlyAN = Math.floor(Math.random() * (remainingAfterIntersection / 3)) + 1;
+        
+        // 生成只屬於B的部分（B-A）
+        const remainingAfterOnlyA = remainingAfterIntersection - onlyAN;
+        const onlyBN = Math.floor(Math.random() * (remainingAfterOnlyA / 2)) + 1;
+        
+        // 計算既不屬於A也不屬於B的部分
+        const neitherN = commonDenominator - (intersectionN + onlyAN + onlyBN);
+        
+        if (neitherN > 0) {
+            // 計算A和B的總比例
+            const AN = intersectionN + onlyAN;
+            const BN = intersectionN + onlyBN;
+            
+            // 創建分數對象
+            const A = reduceFraction(AN, commonDenominator);
+            const B = reduceFraction(BN, commonDenominator);
+            const neither = reduceFraction(neitherN, commonDenominator);
+            const intersection = reduceFraction(intersectionN, commonDenominator);
+            const onlyA = reduceFraction(onlyAN, commonDenominator);
+            
+            // 創建唯一標識符
+            const combinationKey = `${A.n}/${A.d}-${B.n}/${B.d}-${neither.n}/${neither.d}-${intersection.n}/${intersection.d}-${onlyA.n}/${onlyA.d}`;
+            
+            // 確保這個組合沒有被使用過
+            if (!usedFractionCombinations.has(combinationKey)) {
+                usedFractionCombinations.add(combinationKey);
+                
+                return {
+                    A: A,
+                    B: B,
+                    neither: neither,
+                    intersection: intersection,
+                    onlyA: onlyA
+                };
+            }
+        }
+        attempts++;
+    }
+    
+    // 預設值（確保這些值是正確的）
+    const defaultValues = [
+        {
+            A: { n: 4, d: 10 },      // 4/10
+            B: { n: 3, d: 10 },      // 3/10
+            neither: { n: 4, d: 10 }, // 4/10
+            intersection: { n: 1, d: 10 }, // 1/10
+            onlyA: { n: 3, d: 10 }    // 3/10
+        },
+        {
+            A: { n: 5, d: 12 },      // 5/12
+            B: { n: 4, d: 12 },      // 4/12
+            neither: { n: 4, d: 12 }, // 4/12
+            intersection: { n: 2, d: 12 }, // 2/12
+            onlyA: { n: 3, d: 12 }    // 3/12
+        },
+        {
+            A: { n: 6, d: 15 },      // 6/15
+            B: { n: 5, d: 15 },      // 5/15
+            neither: { n: 5, d: 15 }, // 5/15
+            intersection: { n: 2, d: 15 }, // 2/15
+            onlyA: { n: 4, d: 15 }    // 4/15
+        }
+    ];
+    
+    // 從未使用過的預設值中選擇一個
+    for (let value of defaultValues) {
+        const key = `${value.A.n}/${value.A.d}-${value.B.n}/${value.B.d}-${value.neither.n}/${value.neither.d}-${value.intersection.n}/${value.intersection.d}-${value.onlyA.n}/${value.onlyA.d}`;
+        if (!usedFractionCombinations.has(key)) {
+            usedFractionCombinations.add(key);
+            return value;
+        }
+    }
+    
+    // 如果所有預設值都被使用過，返回第一個預設值
+    return defaultValues[0];
+}
+
+// 新增輔助函數：
+function reduceFraction(n, d) {
+    const gcd = (a, b) => b ? gcd(b, a % b) : a;
+    const divisor = gcd(Math.abs(n), Math.abs(d));
+    return {
+        n: n / divisor,
+        d: d / divisor
+    };
 }
